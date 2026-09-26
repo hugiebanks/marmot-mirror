@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101216">
+  <title>Marmot Mirror — Discord Payload Workbench</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font: 15px/1.5 ui-monospace, "Cascadia Code", Consolas, monospace;
+      color: #e8e9e7;
+      background: #101216;
+      --muted: #8a9098;
+      --line: #30343a;
+      --panel: #171a1f;
+      --lime: #c3ee75;
+      --orange: #f39a63;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; }
+    button, select, textarea { font: inherit; }
+    button, select { color: inherit; }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 24px clamp(18px, 4vw, 54px);
+      border-bottom: 1px solid var(--line);
+    }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .mark { color: var(--lime); font-size: 27px; }
+    h1 { margin: 0; font: 700 21px/1.2 system-ui, sans-serif; letter-spacing: -.04em; }
+    .subtitle { margin: 4px 0 0; color: var(--muted); font: 12px/1.4 system-ui, sans-serif; }
+    .offline { padding: 6px 10px; border: 1px solid #46602c; border-radius: 20px; color: var(--lime); font-size: 11px; }
+    main { width: min(1320px, 100%); margin: 0 auto; padding: 28px clamp(16px, 3vw, 38px) 54px; }
+    .intro { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 18px; }
+    h2 { margin: 0; font: 600 17px system-ui, sans-serif; }
+    .hint { margin: 5px 0 0; color: var(--muted); font: 12px system-ui, sans-serif; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 16px; align-items: start; }
+    .card { overflow: hidden; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); }
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px; border-bottom: 1px solid var(--line); }
+    select, button { min-height: 34px; padding: 6px 10px; border: 1px solid #3a3f47; border-radius: 5px; background: #20242a; font-size: 12px; }
+    button { cursor: pointer; }
+    button:hover, select:hover { border-color: #737b86; }
+    button.primary { border-color: #9dc852; color: #11160a; background: var(--lime); font-weight: 700; }
+    button.quiet { color: #c5c9ce; background: transparent; }
+    .spacer { flex: 1; }
+    textarea {
+      display: block;
+      width: 100%;
+      min-height: 510px;
+      resize: vertical;
+      padding: 18px;
+      border: 0;
+      outline: 0;
+      color: #d7e1d0;
+      background: #131519;
+      font-size: 12px;
+      line-height: 1.7;
+      tab-size: 2;
+    }
+    .status { display: flex; justify-content: space-between; gap: 12px; padding: 9px 13px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+    .status.good { color: var(--lime); }
+    .status.bad { color: var(--orange); }
+    aside { display: grid; gap: 12px; }
+    .side-head { padding: 12px 14px; border-bottom: 1px solid var(--line); color: #c5c9ce; font-size: 11px; text-transform: uppercase; letter-spacing: .1em; }
+    .side-body { padding: 13px 14px; color: var(--muted); font: 12px/1.65 system-ui, sans-serif; }
+    .checks { display: grid; gap: 9px; margin: 0; padding: 12px 14px; list-style: none; font: 11px/1.5 system-ui, sans-serif; }
+    .checks li { display: flex; gap: 8px; }
+    .checks .icon { width: 16px; color: var(--lime); text-align: center; }
+    .checks li.warn .icon { color: var(--orange); }
+    .checks li.pass .icon { color: var(--lime); }
+    .eyebrow { margin: 0 0 6px; color: var(--lime); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
+    .foot { margin-top: 16px; color: #747b83; font: 11px system-ui, sans-serif; }
+    .toast { position: fixed; right: 20px; bottom: 20px; padding: 10px 14px; border: 1px solid #46513a; border-radius: 6px; color: var(--lime); background: #1a2015; font-size: 12px; opacity: 0; transform: translateY(6px); transition: .18s ease; pointer-events: none; }
+    .toast.show { opacity: 1; transform: none; }
+    @media (max-width: 800px) {
+      .layout { grid-template-columns: 1fr; }
+      aside { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      textarea { min-height: 390px; }
+    }
+    @media (max-width: 520px) {
+      header { align-items: start; }
+      .offline { white-space: nowrap; }
+      .intro { align-items: start; flex-direction: column; }
+      aside { grid-template-columns: 1fr; }
+      .spacer { display: none; }
+      textarea { min-height: 340px; padding: 13px; font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="mark" aria-hidden="true">◉</div>
+      <div>
+        <h1>Marmot Mirror</h1>
+        <p class="subtitle">discord interaction payload workbench</p>
+      </div>
+    </div>
+    <div class="offline">●&nbsp; OFFLINE / LOCAL</div>
+  </header>
+
+  <main>
+    <div class="intro">
+      <div>
+        <h2>Make a fixture. Break an interaction.</h2>
+        <p class="hint">Edit Discord payloads, catch common shape mistakes, then export a JSON fixture.</p>
+      </div>
+    </div>
+
+    <div class="layout">
+      <section class="card" aria-label="Interaction JSON editor">
+        <div class="toolbar">
+          <select id="example" aria-label="Choose an example">
+            <option value="command">Slash command</option>
+            <option value="button">Button click</option>
+            <option value="modal">Modal submit</option>
+            <option value="autocomplete">Autocomplete</option>
+          </select>
+          <button id="load" class="primary">Load example</button>
+          <span class="spacer"></span>
+          <button id="format" class="quiet">Format</button>
+          <button id="copy" class="quiet">Copy</button>
+          <button id="scrub" class="quiet">Scrub IDs</button>
+          <button id="download" class="quiet">Download</button>
+        </div>
+        <textarea id="editor" spellcheck="false" aria-label="Interaction JSON" autocapitalize="off" autocomplete="off"></textarea>
+        <div id="status" class="status"><span>Ready</span><span id="size">0 bytes</span></div>
+      </section>
+
+      <aside>
+        <section class="card">
+          <div class="side-head">Shape check</div>
+          <ul id="checks" class="checks"><li><span class="icon">·</span><span>Paste JSON or load an example.</span></li></ul>
+        </section>
+        <section class="card">
+          <div class="side-head">What this does</div>
+          <div class="side-body">
+            <p class="eyebrow">Local only</p>
+            Nothing gets sent anywhere or saved for you. The page works offline; download a fixture when you want to keep it.
+          </div>
+        </section>
+        <section class="card">
+          <div class="side-head">About the check</div>
+          <div class="side-body">
+            This catches common missing fields and bad JSON. Discord's full schema has a lot of edge cases, so treat it as a quick lint, not a guarantee.
+          </div>
+        </section>
+      </aside>
+    </div>
+    <p class="foot">No bot token. No tunnel. No server. Just this file and a browser.</p>
+  </main>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const examples = {
+      command: {
+        type: 2,
+        token: 'example-interaction-token',
+        version: 1,
+        application_id: '100000000000000001',
+        guild_id: '100000000000000002',
+        channel_id: '100000000000000003',
+        member: {
+          user: { id: '100000000000000004', username: 'marmot_dev' },
+          roles: [],
+          permissions: '0'
+        },
+        data: { id: '100000000000000010', name: 'hello', type: 1, options: [] }
+      },
+      button: {
+        type: 3,
+        token: 'example-interaction-token',
+        version: 1,
+        application_id: '100000000000000001',
+        guild_id: '100000000000000002',
+        channel_id: '100000000000000003',
+        member: { user: { id: '100000000000000004', username: 'marmot_dev' }, roles: [] },
+        message: { id: '100000000000000020', content: 'Choose an option', components: [] },
+        data: { custom_id: 'confirm_order', component_type: 2 }
+      },
+      modal: {
+        type: 5,
+        token: 'example-interaction-token',
+        version: 1,
+        application_id: '100000000000000001',
+        guild_id: '100000000000000002',
+        channel_id: '100000000000000003',
+        member: { user: { id: '100000000000000004', username: 'marmot_dev' }, roles: [] },
+        data: {
+          custom_id: 'feedback_form',
+          components: [{ type: 1, components: [{ type: 4, custom_id: 'feedback', value: 'Nice bot!' }] }]
+        }
+      },
+      autocomplete: {
+        type: 4,
+        token: 'example-interaction-token',
+        version: 1,
+        application_id: '100000000000000001',
+        guild_id: '100000000000000002',
+        channel_id: '100000000000000003',
+        member: { user: { id: '100000000000000004', username: 'marmot_dev' }, roles: [] },
+        data: {
+          id: '100000000000000010',
+          name: 'search',
+          type: 1,
+          options: [{ name: 'query', type: 3, value: 'mar', focused: true }]
+        }
+      }
+    };
+
+    const editor = document.querySelector('#editor');
+    const checks = document.querySelector('#checks');
+    const status = document.querySelector('#status');
+    const toast = document.querySelector('#toast');
+    let toastTimer;
+
+    function notify(message) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+    }
+
+    function parseEditor() {
+      try {
+        return { value: JSON.parse(editor.value), error: null };
+      } catch (error) {
+        return { value: null, error };
+      }
+    }
+
+    function addCheck(message, kind = 'pass') {
+      const item = document.createElement('li');
+      item.className = kind;
+      const icon = document.createElement('span');
+      icon.className = 'icon';
+      icon.textContent = kind === 'pass' ? '✓' : '!';
+      const text = document.createElement('span');
+      text.textContent = message;
+      item.append(icon, text);
+      checks.append(item);
+    }
+
+    function validate() {
+      const bytes = new TextEncoder().encode(editor.value).length;
+      document.querySelector('#size').textContent = bytes.toLocaleString() + ' bytes';
+      checks.replaceChildren();
+
+      if (!editor.value.trim()) {
+        status.className = 'status';
+        status.firstElementChild.textContent = 'Ready';
+        addCheck('Paste JSON or load an example.', 'warn');
+        return;
+      }
+
+      const { value, error } = parseEditor();
+      if (error) {
+        status.className = 'status bad';
+        status.firstElementChild.textContent = 'Invalid JSON';
+        addCheck(error.message, 'warn');
+        return;
+      }
+
+      let warnings = 0;
+      const warn = message => { warnings++; addCheck(message, 'warn'); };
+      if (!value || Array.isArray(value) || typeof value !== 'object') {
+        warn('The top-level value should be an object.');
+      } else {
+        if (![1, 2, 3, 4, 5].includes(value.type)) warn('type should be 1 (ping) or 2–5 (interaction).');
+        if (typeof value.token !== 'string' || !value.token) warn('token is missing or not a string.');
+        if (value.version !== 1) warn('version is usually 1.');
+        if (!value.application_id) warn('application_id is missing.');
+        if (value.type === 2 || value.type === 4) {
+          if (!value.data || typeof value.data !== 'object') warn('This interaction type usually has a data object.');
+          else if (typeof value.data.name !== 'string') warn('data.name is missing.');
+        }
+        if (value.type === 3 && !value.data?.custom_id) warn('Component interactions need data.custom_id.');
+        if (value.type === 5 && !value.data?.custom_id) warn('Modal submits need data.custom_id.');
+        if ((value.guild_id || value.channel_id) && !value.member && !value.user) warn('Server interactions usually include member or user.');
+      }
+
+      if (!warnings) addCheck('Looks like a Discord interaction envelope.');
+      status.className = warnings ? 'status bad' : 'status good';
+      status.firstElementChild.textContent = warnings ? warnings + ' thing' + (warnings === 1 ? '' : 's') + ' to check' : 'Shape looks good';
+    }
+
+    document.querySelector('#load').addEventListener('click', () => {
+      editor.value = JSON.stringify(examples[document.querySelector('#example').value], null, 2);
+      validate();
+    });
+
+    document.querySelector('#format').addEventListener('click', () => {
+      const { value, error } = parseEditor();
+      if (error) return notify('Fix the JSON before formatting it.');
+      editor.value = JSON.stringify(value, null, 2);
+      validate();
+    });
+
+    document.querySelector('#copy').addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(editor.value);
+        notify('Copied.');
+      } catch {
+        editor.focus();
+        editor.select();
+        notify('Press Ctrl+C to copy.');
+      }
+    });
+
+    document.querySelector('#scrub').addEventListener('click', () => {
+      const { value, error } = parseEditor();
+      if (error || !value || typeof value !== 'object') return notify('Load or paste a JSON object first.');
+
+      const idFields = new Set(['id', 'application_id', 'guild_id', 'channel_id', 'webhook_id']);
+      function scrub(item, key = '') {
+        if (Array.isArray(item)) return item.map(child => scrub(child));
+        if (!item || typeof item !== 'object') return idFields.has(key) ? '000000000000000000' : item;
+        return Object.fromEntries(Object.entries(item).map(([childKey, child]) => [childKey, scrub(child, childKey)]));
+      }
+
+      editor.value = JSON.stringify(scrub(value), null, 2);
+      validate();
+      notify('Snowflake IDs replaced. Review before sharing.');
+    });
+
+    document.querySelector('#download').addEventListener('click', () => {
+      const { value, error } = parseEditor();
+      if (error) return notify('Fix the JSON before downloading it.');
+      const file = new Blob([JSON.stringify(value, null, 2) + '\n'], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(file);
+      link.download = 'discord-interaction.json';
+      link.click();
+      URL.revokeObjectURL(link.href);
+      notify('Fixture downloaded.');
+    });
+
+    editor.addEventListener('input', validate);
+    editor.value = JSON.stringify(examples.command, null, 2);
+    validate();
+  </script>
+</body>
+</html>
